@@ -7,6 +7,7 @@ import json
 import logging
 import mimetypes
 import re
+import signal
 
 from .calendar import render_ics
 from .sources import MAX_BYTES
@@ -57,7 +58,8 @@ def make_server(service, host='127.0.0.1', port=8099, editor=True, ingress_only=
                 elif not editor:
                     self.send({'error': 'Nicht gefunden.'}, status=404)
                 elif path == '/api/state':
-                    self.send({'config': service.config(), 'documents': service.documents(), 'status': service.status()})
+                    self.send({'config': service.config(), 'documents': service.documents(), 'status': service.status(),
+                               'mqtt': service.mqtt.status() if hasattr(service, 'mqtt') else {'connected': False, 'message': 'Nicht gestartet.', 'sensor_count': 0}})
                 elif path.startswith('/api/documents/'):
                     image = re.fullmatch(r'/api/documents/([0-9a-f]{24})/page/([0-9]{1,2})\.png', path)
                     if image:
@@ -133,6 +135,12 @@ def safe_refresh(service):
 
 
 def run(service, editor_port=8099, feed_port=8098, ingress_only=True, refresh=True):
+    from .mqtt import MqttBridge
+    service.mqtt = MqttBridge(service)
+    service.mqtt.start()
+    def terminate(signum, frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, terminate)
     stop = Event()
     bind = '0.0.0.0' if ingress_only else '127.0.0.1'
     editor = make_server(service, bind, editor_port, True, ingress_only)
@@ -151,6 +159,7 @@ def run(service, editor_port=8099, feed_port=8098, ingress_only=True, refresh=Tr
         editor.serve_forever()
     finally:
         stop.set()
+        service.mqtt.close()
         feed.shutdown()
         feed.server_close()
         editor.server_close()

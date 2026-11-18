@@ -15,6 +15,7 @@ from .rules import default_rules, evaluate, validate_rules
 from .render import render_page
 from .sources import discover_links, download, template_urls, MAX_BYTES
 from .store import atomic_write, load_json, save_json
+from .mqtt import DEFAULT_MQTT, validate_mqtt
 
 LOG = logging.getLogger(__name__)
 DEFAULT_CONFIG = {
@@ -22,6 +23,7 @@ DEFAULT_CONFIG = {
     'overview_url': 'https://swbm.de/geschaeftsfelder/abfallentsorgung/abfallkalender/',
     'source_format': 'pdf', 'pdf_url_pattern': '', 'ics_url_pattern': '',
     'link_pattern': '', 'next_year_month': 10, 'rules': default_rules(),
+    'mqtt': DEFAULT_MQTT,
 }
 
 
@@ -54,6 +56,7 @@ def validate_config(config):
     except regex.error as exc:
         raise ValueError(f'Ungültiges Link-Suchmuster: {exc}') from exc
     validate_rules(value['rules'])
+    value['mqtt'] = validate_mqtt(value['mqtt'])
     return value
 
 
@@ -72,9 +75,12 @@ class Service:
         self._records = {}
         self._events = self._calculate(self._config)
 
-    def config(self):
+    def config(self, include_secrets=False):
         with self.lock:
-            return deepcopy(self._config)
+            config = deepcopy(self._config)
+            if not include_secrets:
+                config['mqtt']['password_set'] = bool(config['mqtt'].pop('password'))
+            return config
 
     def status(self):
         with self.lock:
@@ -157,8 +163,16 @@ class Service:
         return {**evaluate(records, rules), 'record_count': len(records)}
 
     def save_config(self, config):
-        value = validate_config(config)
         with self.lock:
+            candidate = deepcopy(config)
+            if isinstance(candidate, dict) and isinstance(candidate.get('mqtt'), dict):
+                candidate['mqtt'].setdefault('password', self._config['mqtt']['password'])
+            value = validate_config(candidate)
+            connection_fields = ('mode', 'host', 'port', 'tls')
+            changed = any(value['mqtt'][k] != self._config['mqtt'][k] for k in connection_fields)
+            ledger = load_json(self.root / 'mqtt.json', {})
+            if changed and (self._config['mqtt']['enabled'] or ledger.get('topics')):
+                raise ValueError('Zum Wechsel der MQTT-Verbindung zuerst die Sensorbereitstellung ausschalten, speichern und die Bereinigung abwarten.')
             events = self._calculate(value)
             save_json(self.root / 'config.json', value)
             self._config, self._events = value, events

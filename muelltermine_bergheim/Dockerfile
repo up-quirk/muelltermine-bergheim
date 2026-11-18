@@ -1,6 +1,6 @@
 FROM python:3.12-slim-bookworm
 ARG BUILD_ARCH
-ARG BUILD_VERSION=0.1.0
+ARG BUILD_VERSION=0.2.0
 LABEL io.hass.name="Mülltermine Bergheim" \
       io.hass.description="Bergheim waste calendar with PDF rule preview" \
       io.hass.type="addon" \

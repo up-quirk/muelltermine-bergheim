@@ -26,3 +26,15 @@ Die vollständige Browserbedienung wurde lokal geprüft; auf Home Assistant wurd
 `docs/verify-workflow.example.yml` enthält eine vorbereitete GitHub-Actions-Konfiguration für Python-Prüfungen und beide Containerarchitekturen. Sie ist keine aktive Workflow-Datei: Die vorhandene GitHub-Anmeldung hat keine `workflow`-Berechtigung, und GitHub lehnte einen Push mit aktiver Workflow-Datei ab. Der App-Code wurde anschließend ohne zusätzliche Kontoberechtigungen veröffentlicht. Die Vorlage kann später mit passender Berechtigung nach `.github/workflows/verify.yml` übernommen werden.
 
 Andere Stadtteile, gescannte PDFs und abweichende Tabellenlayouts sind nicht mit eigenen Beispielen verifiziert. Die App ist als experimentell gekennzeichnet.
+# Version 0.2.0 – MQTT Discovery
+
+- 26 Tests bestanden (Python 3.12), einschließlich Terminberechnung, Konfiguration,
+  Passwortredaktion, Neustart/Birth, Wiederverbindung, fehlendem Broker, Entfernung
+  deaktivierter Tonnen, fehlgeschlagener Veröffentlichung und Passwortrotation.
+- JavaScript-Syntaxprüfung bestanden.
+- Lokale Browserprüfung: automatische/manuelle Broker-Auswahl, Speichern,
+  geleertes Passwortfeld nach Speichern bei weiterhin gespeicherten Zugangsdaten;
+  mobile Breite 390 Pixel ohne horizontalen Überlauf; keine JavaScript-Fehler.
+- Unabhängiges Review hat zwei Fehler bei Passwortrotation gefunden; korrigiert
+  und durch Regressionstest abgesichert.
+- Live-Update und Migration werden nach Veröffentlichung getrennt dokumentiert.

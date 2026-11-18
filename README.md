@@ -18,7 +18,7 @@ Eigenständige Home-Assistant-App mit automatischem Kalenderabruf und einer Werk
 3. **Weboberfläche öffnen** wählen. Beim ersten Start werden die Kalender automatisch abgerufen.
 4. Die Treffer prüfen und die gewünschten Regeln speichern.
 
-Home Assistant OS mit Supervisor; Architekturen `aarch64` und `amd64`. Der Supervisor baut Version 0.1.0 lokal aus dem Dockerfile. Die Installation kann daher einige Minuten dauern.
+Home Assistant OS mit Supervisor; Architekturen `aarch64` und `amd64`. Der Supervisor baut Version 0.2.0 lokal aus dem Dockerfile. Die Installation kann daher einige Minuten dauern.
 
 ## Kalender verwenden
 
@@ -57,3 +57,11 @@ Parser, Zuordnung und Kalenderexport haben keine Home-Assistant-Abhängigkeit. D
 ## Lizenz und Daten
 
 Der Programmcode steht unter der MIT-Lizenz. Die Kalenderdaten stammen von den [Stadtwerken Bergheim](https://swbm.de/geschaeftsfelder/abfallentsorgung/abfallkalender/). Die Original-PDFs und ICS-Dateien werden nicht in diesem Repository veröffentlicht; für Prüfungen werden sie von der offiziellen Quelle heruntergeladen. Die MIT-Lizenz bezieht sich auf den Programmcode, nicht auf die Stadtwerke-Dokumente.
+# Sensoren automatisch bereitstellen
+
+Seit Version 0.2.0 kann die App Müllsensoren über **MQTT Discovery** selbst
+bereitstellen. In der Weboberfläche unter **Abruf & Einstellungen** aktivieren.
+Mit der Mosquitto-App werden die Zugangsdaten automatisch vom Supervisor bezogen;
+alternativ lässt sich ein eigener Broker konfigurieren. Voraussetzung ist die
+MQTT-Integration in Home Assistant. Keine Sensor-YAML oder Jinja-Datei erforderlich.
+Details und Migration: [Anleitung](muelltermine_bergheim/DOCS.md).

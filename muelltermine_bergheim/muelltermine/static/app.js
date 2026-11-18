@@ -2,6 +2,12 @@
 const $ = id => document.getElementById(id);
 let state, draft, selectedRule = 0, selectedDocument = '', result, dirty = false, previewTimer, previewSequence = 0, editRevision = 0, pdfPage = 1;
 const settingKeys = ['district', 'overview_url', 'source_format', 'pdf_url_pattern', 'ics_url_pattern', 'link_pattern', 'next_year_month'];
+const mqttKeys = ['enabled', 'mode', 'host', 'port', 'username', 'tls', 'discovery_prefix', 'birth_topic', 'timezone'];
+function renderMqttSettings() {
+  for (const key of mqttKeys) {const el = $('mqtt-' + key); if (el.type === 'checkbox') el.checked = draft.mqtt[key]; else el.value = draft.mqtt[key];}
+  $('mqtt-password').placeholder = draft.mqtt.password_set ? 'Gespeichert · leer lassen zum Beibehalten' : 'Optional';
+  $('mqtt-manual').hidden = draft.mqtt.mode !== 'manual';
+}
 const escapeHTML = text => String(text ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function api(path, body, options = {}) {
   const response = await fetch(path, body === undefined ? options : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), ...options});
@@ -56,11 +62,12 @@ function renderStatus() {
   const last = s.last_success ? new Date(s.last_success).toLocaleString('de-DE') : 'noch kein erfolgreicher Abruf';
   $('status-text').textContent = s.refreshing ? 'Kalender werden abgerufen …' : `${s.event_count} aktive Termine · Letzter Abruf: ${last}${s.errors.length ? ` · ${s.errors.length} Abrufhinweis(e)` : ''}`;
   $('refresh').disabled = s.refreshing;
+  $('mqtt-status').textContent = state.mqtt.message;
   $('status-details').textContent = `Aktive Kalenderjahre: ${s.active_years.join(', ') || 'keine'}\nLetzter Versuch: ${s.last_attempt ? new Date(s.last_attempt).toLocaleString('de-DE') : 'noch keiner'}\n\n${s.errors.join('\n\n') || 'Keine Abruffehler.'}`;
 }
 async function loadState(initial = false, preferred) {
   state = await api('api/state');
-  if (initial) {draft = structuredClone(state.config); settingKeys.forEach(key => $(key).value = draft[key]); renderRules(); renderEditor();}
+  if (initial) {draft = structuredClone(state.config); settingKeys.forEach(key => $(key).value = draft[key]); renderMqttSettings(); renderRules(); renderEditor();}
   renderDocuments(preferred); renderStatus();
 }
 function highlight(text, spans) {
@@ -107,6 +114,11 @@ for (const [field,key] of [['rule-name','name'],['rule-id','id'],['rule-pattern'
   $(field).addEventListener('input', () => {draft.rules[selectedRule][key] = $(field).type === 'checkbox' ? $(field).checked : $(field).value; setDirty(); if (field !== 'rule-pattern') renderRules(); schedulePreview();});
 }
 for (const key of settingKeys) $(key).addEventListener('input', () => {draft[key] = key === 'next_year_month' ? Number($(key).value) : $(key).value; setDirty();});
+for (const key of [...mqttKeys, 'password']) $('mqtt-' + key).addEventListener($('mqtt-' + key).tagName === 'SELECT' ? 'change' : 'input', () => {
+  const el = $('mqtt-' + key);
+  draft.mqtt[key] = el.type === 'checkbox' ? el.checked : key === 'port' ? Number(el.value) : el.value;
+  $('mqtt-manual').hidden = draft.mqtt.mode !== 'manual'; setDirty();
+});
 $('document').onchange = () => {selectedDocument = $('document').value; pdfPage = 1; result = null; renderDocuments(); schedulePreview();};
 $('result-filter').onchange = renderResults;
 $('add-rule').onclick = () => {const id = 'tonne_' + Date.now().toString(36); draft.rules.push({id,name:'Neue Tonne',pattern:'Suchtext',enabled:true,case_sensitive:false,color:'#64748b'}); selectedRule = draft.rules.length-1; setDirty(); renderRules(); renderEditor(); schedulePreview();};
@@ -114,7 +126,7 @@ $('delete-rule').onclick = () => {if (draft.rules.length <= 1) return; draft.rul
 $('save').onclick = async () => {
   $('save').disabled = true;
   const revision = editRevision, submitted = structuredClone(draft);
-  try {const saved = await api('api/config',submitted); if (revision === editRevision) {draft = saved; setDirty(false); notice('Einstellungen übernommen. Der Kalender verwendet jetzt diese Regeln.');} else {notice('Einstellungen gespeichert. Deine neueren Eingaben sind noch nicht übernommen.');} await loadState(); await runPreview();}
+  try {const saved = await api('api/config',submitted); if (revision === editRevision) {draft = saved; $('mqtt-password').value = ''; renderMqttSettings(); setDirty(false); notice('Einstellungen übernommen. Kalender und Sensoren verwenden jetzt diese Regeln.');} else {notice('Einstellungen gespeichert. Deine neueren Eingaben sind noch nicht übernommen.');} await loadState(); await runPreview();}
   catch(error) {notice(error.message,true);} finally {$('save').disabled = false;}
 };
 $('refresh').onclick = async () => {try {await api('api/refresh',{}); notice('Abruf mit den gespeicherten Einstellungen gestartet.'); $('refresh').disabled = true; setTimeout(poll,1000);} catch(error) {notice(error.message,true);}};

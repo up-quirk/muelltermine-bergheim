@@ -1,5 +1,5 @@
 name: Mülltermine Bergheim
-version: 0.1.0
+version: 0.2.0
 slug: muelltermine_bergheim
 description: Automatische Müllkalender mit PDF-Vorschau und live testbaren Suchregeln
 url: https://github.com/up-quirk/muelltermine-bergheim
@@ -10,6 +10,8 @@ startup: application
 boot: auto
 init: false
 stage: experimental
+services:
+  - mqtt:want
 ingress: true
 ingress_port: 8099
 panel_icon: mdi:trash-can-outline

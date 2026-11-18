@@ -76,3 +76,41 @@ Die App speichert `config.json`, `documents.json`, `status.json` und Dokumente s
 ## Grenzen
 
 Keine OCR: Gescannte PDFs werden abgelehnt. Bei geänderter Tabellenstruktur muss der Parser angepasst werden. Die Jahreskalender sind die veröffentlichte Planung der Stadtwerke und können kurzfristige Sondermeldungen außerhalb der Kalenderdateien nicht berücksichtigen.
+## Automatische Sensoren ab 0.2.0
+
+Unter **Weboberfläche öffnen → Abruf & Einstellungen → Sensoren in Home Assistant**
+die automatische Bereitstellung einschalten und speichern. Voraussetzung sind ein
+MQTT-Broker und die MQTT-Integration in Home Assistant mit aktivierter Discovery.
+Der Modus „Automatisch“ verwendet den MQTT-Dienst des Supervisors, beispielsweise
+die Mosquitto-App. Ohne Broker bleiben PDF-Test, Download, ICS und JSON nutzbar.
+
+Das Gerät **Mülltermine Bergheim** enthält einen Sensor je aktiver Tonnenregel.
+Die vorgeschlagenen IDs sind `sensor.muelltermine_bergheim_<kennung>_mqtt`;
+Home Assistant kann bei Kollisionen eine Nummer anhängen. Zustände: „Heute“,
+„Morgen“, „in … Tagen“, „Kein Termin“. Attribute: `next_date`, `days_until`,
+`active_years`, `last_success`, `errors`. Die Zeitzone steuert den Tageswechsel
+(Standard Europe/Berlin). Aktualisierung erfolgt wenige Sekunden nach Speichern,
+Kalenderabruf und Tageswechsel. Bei Verbindungsabbruch markiert MQTT die Sensoren
+über das Last Will nach Erkennung als nicht verfügbar.
+
+Für einen externen Broker „Eigenen Broker verwenden“ auswählen und Host, Port,
+Benutzername und Passwort einstellen. TLS prüft das Serverzertifikat über den
+System-Zertifikatsspeicher; für TLS üblicherweise Port 8883 einstellen. Ein
+unverändert gelassenes Passwortfeld erhält das gespeicherte Passwort; ein
+bearbeitetes und geleertes Feld löscht es. Zugangsdaten liegen im privaten
+App-Datenverzeichnis und werden nicht über die APIs ausgegeben. Discovery-Präfix
+und Home-Assistant-Startthema sind bei abweichender MQTT-Konfiguration anpassbar.
+
+Beim Wechsel der Brokerverbindung zuerst die Bereitstellung ausschalten und
+speichern, während der alte Broker erreichbar ist. Nach der Bereinigung die
+Verbindungsdaten ändern und wieder einschalten. Bei gelöschten/deaktivierten
+Regeln entfernt die App deren Discovery-Einträge. Eine Reaktivierung legt die
+Entität neu an. Regelkennungen möglichst beibehalten, damit die Zuordnung stabil
+bleibt. Vor Deinstallation ebenfalls ausschalten und die Bereinigung abwarten.
+
+Bestehende REST-Sensoren laufen beim Update weiter: MQTT ist zunächst ausgeschaltet.
+Zur Migration einschalten, MQTT-Sensoren prüfen, Dashboard auf diese umstellen und
+erst danach die bisherigen REST-Sensoren samt unbenutzten Jinja-Makros entfernen.
+Ein Core-Neustart ist für MQTT Discovery nicht nötig. REST-Konfiguration über
+`rest.reload` neu laden. Discovery-Nachrichten und Zustände werden retained mit
+QoS 1 veröffentlicht; HA-Neustart und Broker-Wiederverbindung lösen einen Abgleich aus.

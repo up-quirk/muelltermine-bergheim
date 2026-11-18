@@ -7,5 +7,6 @@ data/
 dist/
 *.egg-info/
 .env
+.artifacts/
 tests/fixtures/*.pdf
 tests/fixtures/*.ics
