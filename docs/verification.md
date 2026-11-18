@@ -13,8 +13,16 @@ Stand: 18. November 2026.
 - `node --check` und Python-Kompilierung ohne Fehler.
 - Unabhängiges Code-Review; dabei gefundene Fehler mit Regressionstests behoben.
 
-## Noch gesondert zu prüfen
+## Prüfung auf Home Assistant
 
-Der lokale Docker-Daemon startet auf dem Entwicklungssystem nicht; WSL meldet keine installierte Distribution. Ein erfolgreicher lokaler Linux-Containerbuild wurde deshalb noch nicht nachgewiesen. Die GitHub-Prüfkonfiguration baut beide angegebenen Architekturen und führt die Python-Prüfungen unter Linux aus. Ergebnisse einer Supervisor-Installation werden hier nachgetragen.
+Der Supervisor hat Version 0.1.0 aus dem veröffentlichten Repository erfolgreich als Linux-Container gebaut und installiert. Die App wurde gestartet und hat beide Kalender selbst heruntergeladen. Die Ausgabe enthält 217 Ereignisse, aktive Jahre 2026 und 2027 und keine Abruffehler.
+
+Die Ingress-Schnittstelle wurde auf der installierten App geprüft: Konfiguration lesen (HTTP 200), Entwurfsmuster testen (Restmüllregel auf Biotonne: 43 Vorschau-Treffer) und Originalseite als PNG rendern (HTTP 200, `image/png`). Die aktive Restmüllausgabe für 2027 blieb bei 26 Terminen. Der über das lokale Netzwerk veröffentlichte ICS-Anschluss antwortet mit HTTP 200 und 217 VEVENT-Einträgen.
+
+Die vollständige Browserbedienung wurde lokal geprüft; auf Home Assistant wurde die Ingress-API geprüft. Die zweite deklarierte Prozessorarchitektur wurde nicht separat gebaut. Ein lokaler Docker-Build auf dem Windows-Entwicklungssystem war wegen der dort nicht startenden Docker-/WSL-Umgebung nicht möglich; der erfolgreiche Supervisor-Build ersetzt diesen Laufzeittest auf der vorhandenen HA-Hardware.
+
+## Automatisierung und Grenzen
+
+`docs/verify-workflow.example.yml` enthält eine vorbereitete GitHub-Actions-Konfiguration für Python-Prüfungen und beide Containerarchitekturen. Sie ist keine aktive Workflow-Datei: Die vorhandene GitHub-Anmeldung hat keine `workflow`-Berechtigung, und GitHub lehnte einen Push mit aktiver Workflow-Datei ab. Der App-Code wurde anschließend ohne zusätzliche Kontoberechtigungen veröffentlicht. Die Vorlage kann später mit passender Berechtigung nach `.github/workflows/verify.yml` übernommen werden.
 
 Andere Stadtteile, gescannte PDFs und abweichende Tabellenlayouts sind nicht mit eigenen Beispielen verifiziert. Die App ist als experimentell gekennzeichnet.
