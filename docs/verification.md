@@ -37,4 +37,9 @@ Andere Stadtteile, gescannte PDFs und abweichende Tabellenlayouts sind nicht mit
   mobile Breite 390 Pixel ohne horizontalen Überlauf; keine JavaScript-Fehler.
 - Unabhängiges Review hat zwei Fehler bei Passwortrotation gefunden; korrigiert
   und durch Regressionstest abgesichert.
-- Live-Update und Migration werden nach Veröffentlichung getrennt dokumentiert.
+- Live: Supervisor baut und startet 0.2.0; automatische MQTT-Broker-Erkennung
+  funktioniert. Vier Sensoren teilen ein Gerät und liefern gültige Zustände samt
+  next_date/days_until. App-Stopp setzt alle vier auf unavailable; nach App-Start
+  kehren dieselben Kennungen mit gültigen Werten zurück. 217 Ereignisse, keine
+  Abruffehler. Wohnzimmer-Karten umgestellt, REST-YAML entfernt und erfolgreich
+  geprüft/neu geladen. Kein Home-Assistant-Core-Neustart erforderlich.

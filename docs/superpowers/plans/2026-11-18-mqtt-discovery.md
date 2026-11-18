@@ -17,7 +17,7 @@ responses, read-only feeds, or error messages. Existing REST users can opt in sa
   reconnect, removal and broker unavailability.
 - [x] Implement MQTT settings, supervisor discovery and background publisher.
 - [x] Add GUI controls, status, dependency lock, version 0.2.0 and documentation.
-- [ ] Run unit suite, browser check and code review; fix material findings.
-- [ ] Publish version, update installed app, enable discovery and verify four sensors.
-- [ ] Back up configuration/dashboard, migrate consumers, remove the marked REST
+- [x] Run unit suite, browser check and code review; fix material findings.
+- [x] Publish version, update installed app, enable discovery and verify four sensors.
+- [x] Back up configuration/dashboard, migrate consumers, remove the marked REST
   block and reload REST; verify states and dashboard without a Core restart.
