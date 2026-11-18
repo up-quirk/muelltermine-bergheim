@@ -1,0 +1,4 @@
+configuration:
+  log_level:
+    name: Protokollierung
+    description: Stadtteil, Suchregeln und URL-Muster werden über „Weboberfläche öffnen“ konfiguriert.

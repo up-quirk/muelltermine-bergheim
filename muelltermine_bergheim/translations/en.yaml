@@ -1,0 +1,4 @@
+configuration:
+  log_level:
+    name: Log level
+    description: Configure district, matching rules and URL patterns using Open Web UI.
