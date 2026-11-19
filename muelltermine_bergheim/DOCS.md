@@ -1,5 +1,19 @@
 # Einrichtung und Bedienung
 
+## Speichern, Verwerfen und Navigation
+
+„Speichern und übernehmen“ und „Änderungen verwerfen“ sind nur bei ungespeicherten
+Änderungen aktiv. Verwerfen lädt den zuletzt gespeicherten Stand vom Server und
+setzt Regeln, Farben, Bereich, URL-Muster und MQTT-Eingaben zurück. Das Passwortfeld
+wird geleert, gespeicherte Zugangsdaten bleiben erhalten. Vorschau und Suchtest
+werden zurückgesetzt; aktive Termine werden durch Verwerfen nicht geändert.
+
+Über „Einstellungen öffnen →“ in der separaten Karte „Kalenderquelle einstellen“
+wechselst du zur Ansicht „Bereich, PDF & Sensoren“. Die aktuelle Ansicht wird
+angezeigt. Dort führen „Zurück zu Suchregeln & Vorschau“ oben und unten zurück.
+Auch Browser-Zurück funktioniert. Der Ansichtswechsel allein speichert oder
+verwirft keine Eingaben. Beide Aktionen bleiben beim Scrollen oben erreichbar.
+
 ## Erststart
 
 Nach der Installation **Starten** und dann **Weboberfläche öffnen** wählen. Der Abruf läuft im Hintergrund. Die Oberfläche ist über Ingress in Home Assistant eingebettet und verwendet dessen Anmeldung.
@@ -51,7 +65,7 @@ Die Standardregeln arbeiten ohne Beachtung der Groß-/Kleinschreibung. PDF-Texte
 
 ## Download-Einstellungen
 
-Unter **Abruf & Einstellungen**:
+Unter **Bereich, PDF & Sensoren**:
 
 - **Kalenderbereich / Stadtteil:** 13 offizielle Bereiche zur Auswahl; für weitere Bezeichnungen eigene Eingabe. Alle PDF-Pläne für 2027 sind getestet. Es gibt auf der Kalenderübersicht keine PLZ-Auswahl.
 - **Kalenderübersichtsseite:** Öffentliche HTTPS-Seite mit PDF-/ICS-Links.
@@ -95,7 +109,7 @@ Die App speichert `config.json`, `documents.json`, `status.json` und Dokumente s
 Keine OCR: Gescannte PDFs werden abgelehnt. Bei geänderter Tabellenstruktur muss der Parser angepasst werden. Die Jahreskalender sind die veröffentlichte Planung der Stadtwerke und können kurzfristige Sondermeldungen außerhalb der Kalenderdateien nicht berücksichtigen.
 ## Automatische Sensoren ab 0.2.0
 
-Unter **Weboberfläche öffnen → Abruf & Einstellungen → Sensoren in Home Assistant**
+Unter **Weboberfläche öffnen → Bereich, PDF & Sensoren → Sensoren in Home Assistant**
 die automatische Bereitstellung einschalten und speichern. Voraussetzung sind ein
 MQTT-Broker und die MQTT-Integration in Home Assistant mit aktivierter Discovery.
 Der Modus „Automatisch“ verwendet den MQTT-Dienst des Supervisors, beispielsweise
@@ -134,6 +148,6 @@ QoS 1 veröffentlicht; HA-Neustart und Broker-Wiederverbindung lösen einen Abgl
 
 ## Downloadlinks vor dem Speichern prüfen
 
-Über **Bereich & PDF-Suche** direkt zu den Einstellungen wechseln. Unter **PDF-Suche & Download** sind PDF-URL-Muster und Link-Suchmuster editierbar; leer bedeutet automatische Erkennung. **Downloadlinks suchen** testet ungespeicherte Eingaben für ein Kalenderjahr, ohne PDF-Download oder Änderung aktiver Termine. **Aktive Downloadquellen** zeigt die tatsächlich verwendeten Dateien. Zum Übernehmen speichern und Kalender abrufen.
+Über **Einstellungen öffnen** direkt zu den Einstellungen wechseln. Unter **PDF-Suche & Download** sind PDF-URL-Muster und Link-Suchmuster editierbar; leer bedeutet automatische Erkennung. **Downloadlinks suchen** testet ungespeicherte Eingaben für ein Kalenderjahr, ohne PDF-Download oder Änderung aktiver Termine. **Aktive Downloadquellen** zeigt die tatsächlich verwendeten Dateien. Zum Übernehmen speichern und Kalender abrufen.
 
 Die Kalender 2027 von Büsdorf, Rheidt-Hüchelhoven und Zieverich unterscheiden sich in einzelnen Terminen zwischen PDF und ICS. Die App verwendet das gewählte Format und mischt die Quellen nicht. Details: [Kalenderbereiche](https://github.com/up-quirk/muelltermine-bergheim/blob/main/docs/calendar-areas.md).

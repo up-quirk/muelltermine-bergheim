@@ -1,6 +1,8 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let state, draft, selectedRule = 0, selectedDocument = '', result, dirty = false, previewTimer, previewSequence = 0, editRevision = 0, pdfPage = 1;
+let savedConfig, saving = false, discarding = false, sourceSequence = 0, currentView;
+const viewScroll = {rules:0, settings:0};
 const settingKeys = ['district', 'overview_url', 'source_format', 'pdf_url_pattern', 'ics_url_pattern', 'link_pattern', 'next_year_month'];
 function renderSourceSettings() {
   const presets = $('district-presets');
@@ -24,9 +26,25 @@ function notice(message, error = false) {
   $('notice').textContent = message; $('notice').className = error ? 'error' : ''; $('notice').hidden = false;
 }
 function setDirty(value = true) {
-  if (value) editRevision++;
-  dirty = value; $('dirty').textContent = value ? 'Ungespeicherte Änderungen' : 'Alles gespeichert';
-  $('dirty').classList.toggle('changed', value);
+  if (value) {editRevision++; $('notice').hidden = true;}
+  const comparable = draft ? structuredClone(draft) : null;
+  if (comparable?.mqtt?.password === '' && !savedConfig?.mqtt?.password_set) delete comparable.mqtt.password;
+  dirty = Boolean(comparable && savedConfig && JSON.stringify(comparable) !== JSON.stringify(savedConfig));
+  $('dirty').textContent = dirty ? 'Ungespeicherte Änderungen' : 'Alles gespeichert';
+  $('dirty').classList.toggle('changed', dirty);
+  updateActions();
+}
+function updateActions() {
+  $('save').disabled = $('discard').disabled = !dirty || saving || discarding;
+  $('main-content').inert = discarding;
+  $('save').textContent = saving ? 'Wird gespeichert …' : 'Speichern und übernehmen';
+  $('discard').textContent = discarding ? 'Wird zurückgesetzt …' : 'Änderungen verwerfen';
+}
+function renderDraft() {
+  selectedRule = Math.min(selectedRule, draft.rules.length - 1);
+  settingKeys.forEach(key => $(key).value = draft[key]);
+  $('mqtt-password').value = '';
+  renderSourceSettings(); renderMqttSettings(); renderRules(); renderEditor();
 }
 function renderRules() {
   $('rule-list').innerHTML = draft.rules.map((r, i) => `<button class="rule-card ${selectedRule === i ? 'active' : ''} ${r.enabled === false ? 'disabled' : ''}" data-rule="${i}" aria-pressed="${selectedRule === i}"><span class="rule-dot" data-color="${escapeHTML(r.color)}"></span><span class="rule-label">${escapeHTML(r.name)}</span><span class="rule-count">${result?.counts?.[r.id] ?? '—'}</span></button>`).join('');
@@ -74,7 +92,7 @@ function renderStatus() {
 }
 async function loadState(initial = false, preferred) {
   state = await api('api/state');
-  if (initial) {draft = structuredClone(state.config); settingKeys.forEach(key => $(key).value = draft[key]); renderSourceSettings(); renderMqttSettings(); renderRules(); renderEditor();}
+  if (initial) {savedConfig = structuredClone(state.config); draft = structuredClone(savedConfig); renderDraft(); setDirty(false);}
   renderDocuments(preferred); renderStatus();
 }
 function highlight(text, spans) {
@@ -104,7 +122,7 @@ function schedulePreview() {
 }
 async function runPreview() {
   const seq = ++previewSequence;
-  if (!selectedDocument) {$('preview-state').textContent = '● PDF auswählen'; $('preview-state').classList.remove('busy'); return;}
+  if (!selectedDocument) {result = null; $('preview-state').textContent = '● PDF auswählen'; $('preview-state').classList.remove('busy'); $('result-summary').innerHTML = '<strong>—</strong><div>PDF auswählen<small>Noch kein Testdokument geladen</small></div>'; $('match-list').textContent = ''; return;}
   try {
     const next = await api('api/preview', {document_id:selectedDocument, rules:draft.rules});
     if (seq !== previewSequence) return;
@@ -127,10 +145,12 @@ $('district-presets').onchange = () => {
   if (value !== '__custom') {draft.district = value; $('district').value = value; setDirty();}
 };
 $('source-test').onclick = async () => {
+  const sequence = ++sourceSequence;
   const button = $('source-test'); button.disabled = true;
   $('source-test-result').textContent = 'Downloadlinks werden gesucht …';
   try {
     const found = await api('api/sources/preview', {config:structuredClone(draft), year:Number($('source-test-year').value)});
+    if (sequence !== sourceSequence) return;
     const lines = [`${found.district} · ${found.year}`];
     if (found.warnings.length) lines.push(...found.warnings);
     for (const kind of ['pdf','ics']) {
@@ -138,8 +158,8 @@ $('source-test').onclick = async () => {
       lines.push(`${kind.toUpperCase()} – zusätzliche URLs aus dem Muster: ${found.fallback[kind].length}`, ...found.fallback[kind]);
     }
     $('source-test-result').textContent = lines.join('\n');
-  } catch(error) {$('source-test-result').textContent = error.message;}
-  finally {button.disabled = false;}
+  } catch(error) {if (sequence === sourceSequence) $('source-test-result').textContent = error.message;}
+  finally {if (sequence === sourceSequence) button.disabled = false;}
 };
 for (const key of [...mqttKeys, 'password']) $('mqtt-' + key).addEventListener($('mqtt-' + key).tagName === 'SELECT' ? 'change' : 'input', () => {
   const el = $('mqtt-' + key);
@@ -151,10 +171,30 @@ $('result-filter').onchange = renderResults;
 $('add-rule').onclick = () => {const id = 'tonne_' + Date.now().toString(36); draft.rules.push({id,name:'Neue Tonne',pattern:'Suchtext',enabled:true,case_sensitive:false,color:'#64748b'}); selectedRule = draft.rules.length-1; setDirty(); renderRules(); renderEditor(); schedulePreview();};
 $('delete-rule').onclick = () => {if (draft.rules.length <= 1) return; draft.rules.splice(selectedRule,1); selectedRule = Math.max(0,selectedRule-1); setDirty(); renderRules(); renderEditor(); schedulePreview();};
 $('save').onclick = async () => {
-  $('save').disabled = true;
+  if (!dirty || saving || discarding) return;
+  saving = true; updateActions();
   const revision = editRevision, submitted = structuredClone(draft);
-  try {const saved = await api('api/config',submitted); if (revision === editRevision) {draft = saved; $('mqtt-password').value = ''; renderMqttSettings(); setDirty(false); notice('Einstellungen übernommen. Kalender und Sensoren verwenden jetzt diese Regeln.');} else {notice('Einstellungen gespeichert. Deine neueren Eingaben sind noch nicht übernommen.');} await loadState(); await runPreview();}
-  catch(error) {notice(error.message,true);} finally {$('save').disabled = false;}
+  try {const saved = await api('api/config',submitted); savedConfig = structuredClone(saved); if (revision === editRevision) {draft = structuredClone(saved); renderDraft(); notice('Einstellungen übernommen. Kalender und Sensoren verwenden jetzt diese Regeln.');} else {notice('Einstellungen gespeichert. Deine neueren Eingaben sind noch nicht übernommen.');} setDirty(false); await loadState(); await runPreview();}
+  catch(error) {notice(error.message,true);} finally {saving = false; updateActions();}
+};
+$('discard').onclick = async () => {
+  if (!dirty || saving || discarding) return;
+  discarding = true; updateActions();
+  clearTimeout(previewTimer); previewSequence++;
+  try {
+    const latest = await api('api/state');
+    sourceSequence++;
+    const selectedId = draft.rules[selectedRule]?.id;
+    state = latest; savedConfig = structuredClone(latest.config); draft = structuredClone(savedConfig);
+    selectedRule = Math.max(0, draft.rules.findIndex(r => r.id === selectedId));
+    result = null; $('result-error').hidden = true; $('match-list').textContent = '';
+    $('result-summary').innerHTML = '<strong>—</strong><div>Vorschau wird aktualisiert</div>';
+    $('source-test-result').textContent = 'Noch kein Suchtest gestartet.'; $('source-test').disabled = false;
+    editRevision++; renderDraft(); renderDocuments(); renderStatus(); setDirty(false);
+    notice('Änderungen verworfen. Der zuletzt gespeicherte Stand ist wieder geladen.');
+    await runPreview();
+  } catch(error) {notice('Änderungen konnten nicht verworfen werden. Deine Eingaben bleiben erhalten. ' + error.message,true); schedulePreview();}
+  finally {discarding = false; updateActions();}
 };
 $('refresh').onclick = async () => {try {await api('api/refresh',{}); notice('Abruf mit den gespeicherten Einstellungen gestartet.'); $('refresh').disabled = true; setTimeout(poll,1000);} catch(error) {notice(error.message,true);}};
 $('upload-toggle').onclick = () => {$('upload-form').hidden = !$('upload-form').hidden;};
@@ -165,8 +205,28 @@ $('upload-form').onsubmit = async event => {
   try {const response = await fetch(`api/upload?year=${encodeURIComponent($('upload-year').value)}`,{method:'POST',headers:{'Content-Type':'application/pdf'},body:file}); const value = await response.json(); if (!response.ok) throw new Error(value.error); await loadState(false,value.id); await runPreview(); $('upload-form').hidden = true; notice('PDF zum Testen geladen. Die aktive Kalenderquelle wurde nicht geändert.');}
   catch(error) {notice(error.message,true);} finally {button.disabled = false;}
 };
-document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => {document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active',b===button)); $('rules-view').hidden = button.dataset.view !== 'rules'; $('settings-view').hidden = button.dataset.view !== 'settings';});
-$('source-settings').onclick = () => document.querySelector('[data-view="settings"]').click();
+function showView(view, push = true) {
+  if (view !== 'settings') view = 'rules';
+  if (currentView) viewScroll[currentView] = scrollY;
+  if (push && view !== currentView) history.pushState(null, '', view === 'settings' ? '#einstellungen' : '#regeln');
+  currentView = view;
+  document.querySelectorAll('[data-view]').forEach(button => {
+    const active = button.dataset.view === view;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
+  });
+  $('rules-view').hidden = view !== 'rules'; $('settings-view').hidden = view !== 'settings';
+  $('current-view').textContent = view === 'settings' ? 'Bereich, PDF & Sensoren' : 'Suchregeln & Vorschau';
+  document.title = $('current-view').textContent + ' · Mülltermine Bergheim';
+  const heading = document.querySelector(`#${view}-view h1`);
+  heading.tabIndex = -1; heading.focus({preventScroll:true});
+  scrollTo(0, viewScroll[view]);
+}
+document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => showView(button.dataset.view));
+$('source-settings').onclick = () => showView('settings');
+$('back-to-rules').onclick = $('back-to-rules-bottom').onclick = () => showView('rules');
+window.addEventListener('popstate', () => showView(location.hash === '#einstellungen' ? 'settings' : 'rules', false));
+showView(location.hash === '#einstellungen' ? 'settings' : 'rules', false);
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => {document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active',b===button)); const pdf = button.dataset.tab === 'pdf'; $('match-list').hidden = pdf; $('result-summary').hidden = pdf; $('result-filter').disabled = pdf; $('pdf-panel').hidden = !pdf;});
 window.addEventListener('beforeunload',event => {if (dirty) {event.preventDefault(); event.returnValue = '';}});
 async function poll() {try {const previous = state?.status?.last_attempt; await loadState(); if (state.status.last_attempt !== previous) await runPreview();} catch(error) {notice('Verbindung zur App unterbrochen. ' + error.message,true);}}

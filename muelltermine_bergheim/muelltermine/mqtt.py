@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .store import load_json, save_json
 
 LOG = logging.getLogger(__name__)
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 DEFAULT_MQTT = {
     'enabled': False, 'mode': 'auto', 'host': '', 'port': 1883,
     'username': '', 'password': '', 'tls': False,

@@ -35,7 +35,7 @@ veröffentlichten Kalenderübersicht nicht ausgewiesen.
 
 ## Anpassung bei Portaländerungen
 
-Unter **Bereich & PDF-Suche** oder **Abruf & Einstellungen**:
+Unter **Einstellungen öffnen** oder **Bereich, PDF & Sensoren**:
 
 1. Kalenderbereich wählen; für neue Bezeichnungen „Anderen Bereich eingeben“.
 2. Kalenderübersichtsseite bei geändertem Portalpfad anpassen.

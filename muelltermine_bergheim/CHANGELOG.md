@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.3.1
+
+- „Änderungen verwerfen“ lädt gespeicherte Regeln und Einstellungen samt Vorschau neu.
+- Speichern und Verwerfen sind nur bei Änderungen aktiv und bleiben beim Scrollen erreichbar.
+- Navigation getrennt von Kalenderaktionen, klare Ansichtstitel und Zurück-Schaltflächen.
+- Browser-Zurück und Ansichtswechsel erhalten ungespeicherte Eingaben.
+- Mobile Anordnung und Behandlung verspäteter Antworten verbessert.
+
 ## 0.3.0
 
 - Deutliche Auswahl der 13 offiziellen Kalenderbereiche und Eingabe eigener Bereiche.

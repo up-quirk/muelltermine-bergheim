@@ -62,7 +62,7 @@ Der Programmcode steht unter der MIT-Lizenz. Die Kalenderdaten stammen von den [
 ## Sensoren automatisch bereitstellen
 
 Seit Version 0.2.0 kann die App Müllsensoren über **MQTT Discovery** selbst
-bereitstellen. In der Weboberfläche unter **Abruf & Einstellungen** aktivieren.
+bereitstellen. In der Weboberfläche unter **Bereich, PDF & Sensoren** aktivieren.
 Mit der Mosquitto-App werden die Zugangsdaten automatisch vom Supervisor bezogen;
 alternativ lässt sich ein eigener Broker konfigurieren. Voraussetzung ist die
 MQTT-Integration in Home Assistant. Keine Sensor-YAML oder Jinja-Datei erforderlich.
@@ -70,4 +70,4 @@ Details und Migration: [Anleitung](muelltermine_bergheim/DOCS.md).
 
 ## Bereich und PDF-Download konfigurieren
 
-**Bereich & PDF-Suche** öffnet die Auswahl aller 13 Stadtteilbereiche sowie Übersichtsseite, PDF-URL-Muster und Link-RegEx. **Downloadlinks suchen** testet aktuelle Eingaben ohne Speichern; darunter stehen die aktiven Downloadquellen. Leere Muster bedeuten automatische Suche. [Details](docs/calendar-areas.md).
+**Einstellungen öffnen** öffnet die Auswahl aller 13 Stadtteilbereiche sowie Übersichtsseite, PDF-URL-Muster und Link-RegEx. **Downloadlinks suchen** testet aktuelle Eingaben ohne Speichern; darunter stehen die aktiven Downloadquellen. Leere Muster bedeuten automatische Suche. [Details](docs/calendar-areas.md).
