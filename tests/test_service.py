@@ -32,6 +32,30 @@ class ServiceTests(unittest.TestCase):
                                'https://swbm.de/', 'Bergheim und Kenten', 2027)
         self.assertEqual(links['pdf'], ['https://swbm.de/new-v3.pdf'])
 
+    def test_source_preview_uses_unsaved_area_and_filters_without_activating(self):
+        service = Service(Path(self.temp.name), fetch=lambda _: b'<p>Ahe 2027 <a href="/ahe-2027-v2.pdf">PDF</a><a href="/ahe-2027-old.pdf">Alt</a></p>')
+        cfg = service.config()
+        cfg.update(district='Ahe', link_pattern='v2', pdf_url_pattern='https://example.org/plan_{year}.pdf')
+        result = service.preview_sources(cfg, 2027)
+        self.assertEqual(result['discovered']['pdf'], ['https://swbm.de/ahe-2027-v2.pdf'])
+        self.assertEqual(result['fallback']['pdf'], ['https://example.org/plan_2027.pdf'])
+        self.assertEqual(service.config()['district'], 'Bergheim und Kenten')
+        self.assertEqual(service.documents(), [])
+        cfg['link_pattern'] = '['
+        with self.assertRaises(ValueError):
+            service.preview_sources(cfg, 2027)
+
+    def test_source_preview_keeps_fallback_visible_when_overview_is_unavailable(self):
+        def offline(_):
+            raise OSError('HTTP 404')
+        service = Service(Path(self.temp.name), fetch=offline)
+        cfg = service.config()
+        cfg['pdf_url_pattern'] = 'https://example.org/calendar_{year}.pdf'
+        result = service.preview_sources(cfg, 2027)
+        self.assertEqual(result['discovered']['pdf'], [])
+        self.assertEqual(result['fallback']['pdf'], ['https://example.org/calendar_2027.pdf'])
+        self.assertTrue(result['warnings'])
+
     def test_same_multiyear_ics_preserves_both_years(self):
         content = b'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20260106\r\nSUMMARY:Hausm\xc3\xbcll\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20270105\r\nSUMMARY:Hausm\xc3\xbcll\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n'
         service = Service(Path(self.temp.name))

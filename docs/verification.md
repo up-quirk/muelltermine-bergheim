@@ -23,9 +23,10 @@ Die vollständige Browserbedienung wurde lokal geprüft; auf Home Assistant wurd
 
 ## Automatisierung und Grenzen
 
-`docs/verify-workflow.example.yml` enthält eine vorbereitete GitHub-Actions-Konfiguration für Python-Prüfungen und beide Containerarchitekturen. Sie ist keine aktive Workflow-Datei: Die vorhandene GitHub-Anmeldung hat keine `workflow`-Berechtigung, und GitHub lehnte einen Push mit aktiver Workflow-Datei ab. Der App-Code wurde anschließend ohne zusätzliche Kontoberechtigungen veröffentlicht. Die Vorlage kann später mit passender Berechtigung nach `.github/workflows/verify.yml` übernommen werden.
+Seit 19.11.2026 ist `.github/workflows/verify.yml` aktiv. Pushes und Pull Requests starten Python-/JavaScript-Prüfungen sowie Container-Builds für linux/amd64 und linux/arm64. Der erste Lauf 44481935612 hat alle drei Jobs erfolgreich abgeschlossen. Die frühere Einschränkung durch die fehlende workflow-Berechtigung ist nach Freigabe aufgehoben.
 
-Andere Stadtteile, gescannte PDFs und abweichende Tabellenlayouts sind nicht mit eigenen Beispielen verifiziert. Die App ist als experimentell gekennzeichnet.
+Seit 0.3.0 sind alle 13 offiziellen PDF-Pläne für 2027 getestet. Gescannte und beliebig andere Tabellenlayouts bleiben ununterstützt. Die App ist experimentell gekennzeichnet.
+
 # Version 0.2.0 – MQTT Discovery
 
 - 26 Tests bestanden (Python 3.12), einschließlich Terminberechnung, Konfiguration,

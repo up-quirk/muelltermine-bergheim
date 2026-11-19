@@ -56,6 +56,16 @@ class WebTests(unittest.TestCase):
         self.assertEqual(response.headers['Content-Type'], 'image/png')
         self.assertTrue(response.read().startswith(b'\x89PNG\r\n\x1a\n'))
 
+    def test_source_preview_returns_links_without_saving_settings(self):
+        self.service.fetch = lambda _: b'<p>Ahe 2027 <a href="/ahe_2027.pdf">PDF</a></p>'
+        cfg = self.service.config()
+        cfg['district'] = 'Ahe'
+        payload = json.dumps({'config': cfg, 'year': 2027}).encode()
+        result = json.load(self.request(self.editor, '/api/sources/preview', payload, {'Content-Type': 'application/json'}))
+        self.assertEqual(result['discovered']['pdf'], ['https://swbm.de/ahe_2027.pdf'])
+        self.assertEqual(self.service.config()['district'], 'Bergheim und Kenten')
+        self.assertEqual(self.service.documents(), [])
+
     def test_cross_origin_writes_and_bad_uploads_are_rejected(self):
         for path, content, headers in [
             ('/api/config', b'{}', {'Content-Type': 'application/json', 'Origin': 'https://elsewhere.example'}),

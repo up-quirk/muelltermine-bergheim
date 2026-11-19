@@ -111,6 +111,8 @@ def make_server(service, host='127.0.0.1', port=8099, editor=True, ingress_only=
                     raise ValueError('Ungültige Anfrage.')
                 if parsed.path == '/api/preview':
                     self.send(service.preview(payload.get('document_id'), payload.get('rules')))
+                elif parsed.path == '/api/sources/preview':
+                    self.send(service.preview_sources(payload.get('config'), payload.get('year')))
                 elif parsed.path == '/api/config':
                     self.send(service.save_config(payload))
                 elif parsed.path == '/api/refresh':

@@ -2,6 +2,11 @@
 const $ = id => document.getElementById(id);
 let state, draft, selectedRule = 0, selectedDocument = '', result, dirty = false, previewTimer, previewSequence = 0, editRevision = 0, pdfPage = 1;
 const settingKeys = ['district', 'overview_url', 'source_format', 'pdf_url_pattern', 'ics_url_pattern', 'link_pattern', 'next_year_month'];
+function renderSourceSettings() {
+  const presets = $('district-presets');
+  presets.value = [...presets.options].some(o => o.value === draft.district) ? draft.district : '__custom';
+  $('custom-district').hidden = presets.value !== '__custom';
+}
 const mqttKeys = ['enabled', 'mode', 'host', 'port', 'username', 'tls', 'discovery_prefix', 'birth_topic', 'timezone'];
 function renderMqttSettings() {
   for (const key of mqttKeys) {const el = $('mqtt-' + key); if (el.type === 'checkbox') el.checked = draft.mqtt[key]; else el.value = draft.mqtt[key];}
@@ -63,11 +68,13 @@ function renderStatus() {
   $('status-text').textContent = s.refreshing ? 'Kalender werden abgerufen …' : `${s.event_count} aktive Termine · Letzter Abruf: ${last}${s.errors.length ? ` · ${s.errors.length} Abrufhinweis(e)` : ''}`;
   $('refresh').disabled = s.refreshing;
   $('mqtt-status').textContent = state.mqtt.message;
+  $('source-active-links').textContent = state.documents.filter(d => d.active && d.district === state.config.district)
+    .map(d => `${d.year} · ${d.district} · ${d.format.toUpperCase()}\n${d.source}`).join('\n\n') || 'Noch keine aktive Quelle. Einstellungen speichern und Kalender abrufen.';
   $('status-details').textContent = `Aktive Kalenderjahre: ${s.active_years.join(', ') || 'keine'}\nLetzter Versuch: ${s.last_attempt ? new Date(s.last_attempt).toLocaleString('de-DE') : 'noch keiner'}\n\n${s.errors.join('\n\n') || 'Keine Abruffehler.'}`;
 }
 async function loadState(initial = false, preferred) {
   state = await api('api/state');
-  if (initial) {draft = structuredClone(state.config); settingKeys.forEach(key => $(key).value = draft[key]); renderMqttSettings(); renderRules(); renderEditor();}
+  if (initial) {draft = structuredClone(state.config); settingKeys.forEach(key => $(key).value = draft[key]); renderSourceSettings(); renderMqttSettings(); renderRules(); renderEditor();}
   renderDocuments(preferred); renderStatus();
 }
 function highlight(text, spans) {
@@ -113,7 +120,27 @@ async function runPreview() {
 for (const [field,key] of [['rule-name','name'],['rule-id','id'],['rule-pattern','pattern'],['rule-color','color'],['case-sensitive','case_sensitive'],['rule-enabled','enabled']]) {
   $(field).addEventListener('input', () => {draft.rules[selectedRule][key] = $(field).type === 'checkbox' ? $(field).checked : $(field).value; setDirty(); if (field !== 'rule-pattern') renderRules(); schedulePreview();});
 }
-for (const key of settingKeys) $(key).addEventListener('input', () => {draft[key] = key === 'next_year_month' ? Number($(key).value) : $(key).value; setDirty();});
+for (const key of settingKeys) $(key).addEventListener($(key).tagName === 'SELECT' ? 'change' : 'input', () => {draft[key] = key === 'next_year_month' ? Number($(key).value) : $(key).value; setDirty();});
+$('district-presets').onchange = () => {
+  const value = $('district-presets').value;
+  $('custom-district').hidden = value !== '__custom';
+  if (value !== '__custom') {draft.district = value; $('district').value = value; setDirty();}
+};
+$('source-test').onclick = async () => {
+  const button = $('source-test'); button.disabled = true;
+  $('source-test-result').textContent = 'Downloadlinks werden gesucht …';
+  try {
+    const found = await api('api/sources/preview', {config:structuredClone(draft), year:Number($('source-test-year').value)});
+    const lines = [`${found.district} · ${found.year}`];
+    if (found.warnings.length) lines.push(...found.warnings);
+    for (const kind of ['pdf','ics']) {
+      lines.push(`\n${kind.toUpperCase()} – gefundene Links: ${found.discovered[kind].length}`, ...found.discovered[kind]);
+      lines.push(`${kind.toUpperCase()} – zusätzliche URLs aus dem Muster: ${found.fallback[kind].length}`, ...found.fallback[kind]);
+    }
+    $('source-test-result').textContent = lines.join('\n');
+  } catch(error) {$('source-test-result').textContent = error.message;}
+  finally {button.disabled = false;}
+};
 for (const key of [...mqttKeys, 'password']) $('mqtt-' + key).addEventListener($('mqtt-' + key).tagName === 'SELECT' ? 'change' : 'input', () => {
   const el = $('mqtt-' + key);
   draft.mqtt[key] = el.type === 'checkbox' ? el.checked : key === 'port' ? Number(el.value) : el.value;
@@ -139,9 +166,11 @@ $('upload-form').onsubmit = async event => {
   catch(error) {notice(error.message,true);} finally {button.disabled = false;}
 };
 document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => {document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active',b===button)); $('rules-view').hidden = button.dataset.view !== 'rules'; $('settings-view').hidden = button.dataset.view !== 'settings';});
+$('source-settings').onclick = () => document.querySelector('[data-view="settings"]').click();
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => {document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active',b===button)); const pdf = button.dataset.tab === 'pdf'; $('match-list').hidden = pdf; $('result-summary').hidden = pdf; $('result-filter').disabled = pdf; $('pdf-panel').hidden = !pdf;});
 window.addEventListener('beforeunload',event => {if (dirty) {event.preventDefault(); event.returnValue = '';}});
 async function poll() {try {const previous = state?.status?.last_attempt; await loadState(); if (state.status.last_attempt !== previous) await runPreview();} catch(error) {notice('Verbindung zur App unterbrochen. ' + error.message,true);}}
 $('upload-year').value = new Date().getFullYear();
+$('source-test-year').value = new Date().getFullYear() + (new Date().getMonth() >= 9 ? 1 : 0);
 loadState(true).then(runPreview).catch(error => notice(error.message,true));
 setInterval(poll,5000);

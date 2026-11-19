@@ -1,4 +1,7 @@
 import unittest
+import json
+from unittest.mock import patch
+import pdfplumber
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -30,6 +33,34 @@ class CoreTests(unittest.TestCase):
     def test_wrong_year_is_rejected(self):
         with self.assertRaisesRegex(ValueError, '2027'):
             parse_pdf((FIXTURES / 'bergheim-2026.pdf').read_bytes(), 2027)
+
+    def test_glessen_pdf_recovers_december_days_from_aligned_month_rows(self):
+        records = parse_pdf((FIXTURES / 'glessen-2027.pdf').read_bytes(), 2027)
+        events = evaluate(records, default_rules())['events']
+        self.assertIn(('2027-12-02', 'papier'), {(e['date'], e['rule_id']) for e in events})
+        self.assertIn(('2027-12-24', 'gelb'), {(e['date'], e['rule_id']) for e in events})
+        self.assertEqual(sum(e['rule_id'] == 'rest' for e in events), 26)
+
+    def test_all_thirteen_official_areas_have_readable_bin_calendars(self):
+        areas = json.loads((FIXTURES / 'areas-2027.json').read_text(encoding='utf-8'))
+        self.assertEqual(len(areas), 13)
+        for area in areas:
+            with self.subTest(district=area['district']):
+                records = parse_pdf((FIXTURES / area['file']).read_bytes(), 2027)
+                events = evaluate(records, default_rules())['events']
+                self.assertEqual({e['rule_id'] for e in events}, {'rest', 'gelb', 'bio', 'papier'})
+                self.assertGreaterEqual(len(events), 100)
+
+    def test_missing_december_weekday_does_not_silently_drop_a_calendar_row(self):
+        extract = pdfplumber.page.Page.extract_tables
+        def damaged(page, *args, **kwargs):
+            tables = extract(page, *args, **kwargs)
+            if page.page_number == 3:
+                tables[0][2][15] = '?'
+            return tables
+        with patch.object(pdfplumber.page.Page, 'extract_tables', damaged):
+            with self.assertRaisesRegex(ValueError, 'Dezember'):
+                parse_pdf((FIXTURES / 'glessen-2027.pdf').read_bytes(), 2027)
 
     def test_broken_pdf_has_an_actionable_validation_error(self):
         with self.assertRaises(ValueError):

@@ -162,6 +162,21 @@ class Service:
             records = list(self._read_records(self._index[document_id]))
         return {**evaluate(records, rules), 'record_count': len(records)}
 
+    def preview_sources(self, config, year):
+        value = validate_config(config)
+        if type(year) is not int or not 2000 <= year <= 2100:
+            raise ValueError('Bitte ein gültiges Kalenderjahr wählen.')
+        warnings = []
+        try:
+            html = self.fetch(value['overview_url']).decode('utf-8', errors='replace') if value['overview_url'] else ''
+        except (OSError, ValueError) as exc:
+            html = ''
+            warnings.append(f'Übersichtsseite konnte nicht geladen werden: {exc}')
+        return {'district': value['district'], 'year': year,
+                'warnings': warnings,
+                'discovered': discover_links(html, value['overview_url'], value['district'], year, value['link_pattern']),
+                'fallback': {kind: template_urls(value[f'{kind}_url_pattern'], year) for kind in ('pdf', 'ics')}}
+
     def save_config(self, config):
         with self.lock:
             candidate = deepcopy(config)

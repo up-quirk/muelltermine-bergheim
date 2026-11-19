@@ -53,7 +53,7 @@ Die Standardregeln arbeiten ohne Beachtung der Groß-/Kleinschreibung. PDF-Texte
 
 Unter **Abruf & Einstellungen**:
 
-- **Stadtteil:** Bezeichnung auf der Stadtwerke-Seite. Bisher vollständig geprüft: Bergheim und Kenten.
+- **Kalenderbereich / Stadtteil:** 13 offizielle Bereiche zur Auswahl; für weitere Bezeichnungen eigene Eingabe. Alle PDF-Pläne für 2027 sind getestet. Es gibt auf der Kalenderübersicht keine PLZ-Auswahl.
 - **Kalenderübersichtsseite:** Öffentliche HTTPS-Seite mit PDF-/ICS-Links.
 - **Datenformat:** PDF, ICS oder automatisch (ICS bevorzugt, PDF als Ersatz).
 - **Folgejahr suchen ab:** Monat für die zusätzliche Suche; vorgeschlagen Oktober.
@@ -131,3 +131,9 @@ erst danach die bisherigen REST-Sensoren samt unbenutzten Jinja-Makros entfernen
 Ein Core-Neustart ist für MQTT Discovery nicht nötig. REST-Konfiguration über
 `rest.reload` neu laden. Discovery-Nachrichten und Zustände werden retained mit
 QoS 1 veröffentlicht; HA-Neustart und Broker-Wiederverbindung lösen einen Abgleich aus.
+
+## Downloadlinks vor dem Speichern prüfen
+
+Über **Bereich & PDF-Suche** direkt zu den Einstellungen wechseln. Unter **PDF-Suche & Download** sind PDF-URL-Muster und Link-Suchmuster editierbar; leer bedeutet automatische Erkennung. **Downloadlinks suchen** testet ungespeicherte Eingaben für ein Kalenderjahr, ohne PDF-Download oder Änderung aktiver Termine. **Aktive Downloadquellen** zeigt die tatsächlich verwendeten Dateien. Zum Übernehmen speichern und Kalender abrufen.
+
+Die Kalender 2027 von Büsdorf, Rheidt-Hüchelhoven und Zieverich unterscheiden sich in einzelnen Terminen zwischen PDF und ICS. Die App verwendet das gewählte Format und mischt die Quellen nicht. Details: [Kalenderbereiche](https://github.com/up-quirk/muelltermine-bergheim/blob/main/docs/calendar-areas.md).

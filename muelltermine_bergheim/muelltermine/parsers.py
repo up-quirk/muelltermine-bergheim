@@ -35,15 +35,32 @@ def _parse_pdf(content: bytes, year: int) -> list[Record]:
         months_seen = set()
         for page_number, page in enumerate(pdf.pages, 1):
             for table in page.extract_tables():
-                if not table or max(map(len, table)) != 18:
+                if not table or max(map(len, table)) not in (17, 18):
                     continue
                 header = next((row for row in table if any(
                     (cell or '').strip() in ('Januar', 'Juli') for cell in row)), None)
                 if header is None:
                     continue
                 first_month = 1 if any((v or '').strip() == 'Januar' for v in header) else 7
+                missing_december_day = len(header) == 17
+                if missing_december_day and (first_month != 7 or (header[15] or '').strip() != 'Dezember'):
+                    continue
                 months_seen.update(range(first_month, first_month + 6))
                 for row in table:
+                    if missing_december_day and len(row) == 17 and (row[0] or '').strip() in WEEKDAYS and (row[15] or '').strip() not in WEEKDAYS:
+                        raise ValueError('Dezember-Wochentag fehlt oder ist nicht erkennbar.')
+                    if missing_december_day and len(row) == 17 and (row[15] or '').strip() in WEEKDAYS:
+                        # Glessen 2027 omits December's day column. Other months
+                        # share the same dated row; require agreement and weekday.
+                        days = {(row[i] or '').strip() for i in (1, 4, 7, 10, 13)
+                                if (row[i] or '').strip().isdigit()}
+                        if len(days) != 1:
+                            raise ValueError('Dezember-Tag kann nicht eindeutig aus der Tabellenzeile bestimmt werden.')
+                        day_text = next(iter(days))
+                        when = date(year, 12, int(day_text))
+                        if (row[15] or '').strip() != ('Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So')[when.weekday()]:
+                            raise ValueError('Dezember-Wochentag passt nicht zum Datum der Tabellenzeile.')
+                        row = row[:16] + [day_text] + row[16:]
                     if len(row) != 18:
                         continue
                     for col in range(6):

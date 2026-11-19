@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.3.0
+
+- Deutliche Auswahl der 13 offiziellen Kalenderbereiche und Eingabe eigener Bereiche.
+- Direkter Einstieg „Bereich & PDF-Suche“, Erklärung der automatischen Suche und Anzeige aktiver Quellen.
+- PDF-/ICS-Linksuche mit ungespeicherten Einstellungen testen, ohne aktive Kalender zu ändern.
+- Glessener PDF 2027 mit fehlender Dezember-Tagesspalte unterstützt.
+- Automatische GitHub-Tests und Container-Builds für AMD64 und ARM64 aktiviert.
+
 ## 0.2.1
 
 - MQTT-Sensoren stellen die konfigurierte Tonnenfarbe als Attribut `color` bereit.
