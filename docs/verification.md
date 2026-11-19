@@ -43,3 +43,13 @@ Andere Stadtteile, gescannte PDFs und abweichende Tabellenlayouts sind nicht mit
   kehren dieselben Kennungen mit gültigen Werten zurück. 217 Ereignisse, keine
   Abruffehler. Wohnzimmer-Karten umgestellt, REST-YAML entfernt und erfolgreich
   geprüft/neu geladen. Kein Home-Assistant-Core-Neustart erforderlich.
+# Version 0.2.1 – Tonnenfarben
+
+27 automatisierte Tests bestanden. Der neue Regressionstest prüft die Übertragung
+der Regelfarbe und Farbänderungen bei gleichbleibender Sensor-Kennung. Review ohne
+wesentliche Befunde. Supervisor-Update auf 0.2.1 erfolgreich; alle vier Sensoren
+liefern `color`. Live-Farbänderung an Gelb über App-Konfiguration → MQTT-Attribut →
+HA-Kartenvorlage geprüft; ursprüngliche Farbe #fcdd07 wiederhergestellt.
+Dashboard-Symbole, Seitenstreifen und Tönung verwenden jetzt dynamische Attribute;
+Vorlagen registrieren Sensor-Listener. Konfiguration gespeichert und zurückgelesen.
+Keine visuelle Browserprüfung des HA-Dashboards für dieses Update.
