@@ -8,6 +8,23 @@ Die App verwendet zunächst „Bergheim und Kenten“, Datenformat PDF und die o
 
 ## Suchregeln testen
 
+Die eingestellte Tonnenfarbe wird ab Version 0.2.1 als MQTT-Sensorattribut `color`
+übertragen. Dashboard-Karten können dieses Attribut auswerten. Mit card-mod etwa:
+
+```yaml
+card_mod:
+  style: |
+    {% set c = state_attr('sensor.muelltermine_bergheim_gelb_mqtt', 'color') or '#64748b' %}
+    ha-card {
+      border-inline-start: 4px solid {{ c }};
+      background: linear-gradient({{ c }}17, {{ c }}17), var(--ha-card-background, var(--card-background-color));
+    }
+```
+
+`17` ist der Alpha-Anteil einer achtstelligen Hexfarbe (ungefähr 9 % Deckkraft).
+Damit folgt die dezente Tönung der in der App gespeicherten Farbe. Eine normale
+Standardkarte übernimmt beliebige Sensorattribute nicht von selbst als Farbe.
+
 1. Oben das gewünschte Dokument auswählen. Der neueste PDF-Kalender wird zunächst vorausgewählt.
 2. Eine Tonne links auswählen. Suchmuster als regulären Ausdruck eingeben; nach 350 Millisekunden Tipp-Pause erscheinen rechts die Treffer.
 3. Rechts sind Datum, Originaltext mit Markierungen und PDF-Seite sichtbar. „Alle Tonnen“ zeigt auch kombinierte Abholungen. Unter „Original-PDF“ lässt sich die Datei ansehen.

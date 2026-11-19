@@ -197,3 +197,23 @@ class MqttTests(unittest.TestCase):
         bridge.tick()
         self.assertEqual(sum(t.endswith('/gelb/config') and p == '' for t,p,_,_ in self.transport.messages), 1)
         bridge.close()
+
+    def test_rule_color_changes_are_published_without_recreating_sensors(self):
+        bridge = self.bridge()
+        def yellow_state():
+            return next(json.loads(p) for t,p,_,_ in reversed(self.transport.messages)
+                        if t.endswith('/gelb/state') and p)
+        self.assertEqual(yellow_state().get('color'), '#d99a0b')
+        original_config = next(json.loads(p) for t,p,_,_ in self.transport.messages
+                               if t.endswith('/gelb/config') and p)
+        cfg = self.service.config()
+        cfg['rules'][1]['color'] = '#fcdd07'
+        self.service.save_config(cfg)
+        self.transport.messages.clear()
+        bridge.tick()
+        self.assertEqual(yellow_state()['color'], '#fcdd07')
+        updated = next(json.loads(p) for t,p,_,_ in self.transport.messages
+                       if t.endswith('/gelb/config') and p)
+        self.assertEqual(updated['unique_id'], original_config['unique_id'])
+        self.assertIn('value_json.color', updated['json_attributes_template'])
+        bridge.close()

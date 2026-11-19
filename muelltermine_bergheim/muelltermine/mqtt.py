@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .store import load_json, save_json
 
 LOG = logging.getLogger(__name__)
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 DEFAULT_MQTT = {
     'enabled': False, 'mode': 'auto', 'host': '', 'port': 1883,
     'username': '', 'password': '', 'tls': False,
@@ -213,7 +213,7 @@ class MqttBridge:
                 'icon': 'mdi:trash-can-outline', 'state_topic': state_topic,
                 'value_template': '{{ value_json.state }}',
                 'json_attributes_topic': state_topic,
-                'json_attributes_template': "{{ {'next_date': value_json.next_date, 'days_until': value_json.days_until, 'active_years': value_json.active_years, 'last_success': value_json.last_success, 'errors': value_json.errors} | tojson }}",
+                'json_attributes_template': "{{ {'color': value_json.color, 'next_date': value_json.next_date, 'days_until': value_json.days_until, 'active_years': value_json.active_years, 'last_success': value_json.last_success, 'errors': value_json.errors} | tojson }}",
                 'availability_topic': f'{self.base}/availability',
                 'device': {'identifiers': [f"muelltermine_bergheim_{self.ledger['identity']}"],
                            'name': 'Mülltermine Bergheim', 'manufacturer': 'up-quirk',
@@ -223,6 +223,7 @@ class MqttBridge:
             }
             self._publish(topic, json.dumps(discovery, ensure_ascii=False))
             value = sensor_value(self.service.events(), rule['id'], self.today(cfg['timezone']))
+            value['color'] = rule.get('color', '#64748b')
             value.update({key: status[key] for key in ('active_years', 'last_success', 'errors')})
             self._publish(state_topic, json.dumps(value, ensure_ascii=False))
         self._publish(f'{self.base}/availability', 'online' if rules else 'offline')

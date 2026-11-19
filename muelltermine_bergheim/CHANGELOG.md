@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.2.1
+
+- MQTT-Sensoren stellen die konfigurierte Tonnenfarbe als Attribut `color` bereit.
+- Farbänderungen nach dem Speichern werden automatisch übertragen, ohne neue Entitäten anzulegen.
+
 ## 0.2.0
 
 - Optionale MQTT Discovery: Sensoren ohne configuration.yaml, gruppiert als Gerät.
